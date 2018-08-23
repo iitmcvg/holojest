@@ -34,11 +34,6 @@ An example dataset is available at data/berlin.
 
 4. Start an http server from the root with `python -m SimpleHTTPServer`.
 
-Browse 
-```
-http://localhost:8000/viewer/reconstruction.html#file=/data/DATASET_NAME/reconstruction.meshed.json.
-```
-
 5. Tunnel an appropriate port. Example:
 ```
 ssh -R 18000:localhost:8000 -p PORT holojest@IP

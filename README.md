@@ -1,6 +1,9 @@
 # Holojest
 
-## To-Dp
+Reconstruction of a 3D scene from a single 2D image.
+
+
+## To-Do
 
 * [ ] Compare CV methods and see acceptability. Find number of images for good renders
 * [ ] Exhaust all CV methods
