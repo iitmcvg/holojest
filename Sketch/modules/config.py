@@ -1,10 +1,19 @@
-def init():
-    global main_dir,training_iter,batch_size,learning_rate,name_list_path
-    global sketch_dir,dnfs_dir
-    main_dir='/home/aghinsa/Documents/Sketch/data_char'
-    name_list_path='/home/aghinsa/Documents/Sketch/data_char/list.txt'
-    sketch_dir='/home/aghinsa/Documents/Sketch/data_char/sketch'
-    dnfs_dir='/home/aghinsa/Documents/Sketch/data_char/dnfs'
-    training_iter=2
-    batch_size=2
-    learning_rate=.0001
+'''
+Config params
+'''
+
+main_dir = 'data_char'
+name_list_path = 'data_char/list.txt'
+sketch_dir = 'data_char/sketch'
+dnfs_dir = 'data_char/dnfs'
+
+# Loss tuning
+
+# Train configs
+training_iter = 2
+batch_size = 2
+learning_rate = .0001
+
+# Data
+prefetch_buffer_size = 64
+num_parallel_batches = 8
