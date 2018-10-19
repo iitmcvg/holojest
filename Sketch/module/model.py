@@ -2,7 +2,7 @@ import numpy as np
 import tensorflow as tf
 import tensorflow.contrib.layers as tf_layers
 import tensorflow.contrib.framework as framework
-import modules.config as config
+import module.config as config
 
 main_dir = config.main_dir
 training_iter = config.training_iter
@@ -23,13 +23,16 @@ def encoderNdecoder(
 
     * results: N * 12 * 256 * 256 * 5
     """
-    # images=tf.reshape(images,[-1,256,256,2])
-    images = tf.cast(images, tf.float32)
-    with tf.variable_scope("encoder"):
+    images=tf.reshape(images,[-1,256,256,2])
+    #images = tf.cast(images, tf.float32)
+    with tf.name_scope("encoder"):
         with framework.arg_scope([tf_layers.conv2d],
                                  kernel_size=4, stride=2, normalizer_fn=normalizer_fn,
                                  activation_fn=tf.nn.leaky_relu, padding="same"):
+            print("in encoderNdecoder")
+            print(images[0].shape)
             e1 = tf_layers.conv2d(images, num_outputs=64)  # 256 x 256 x 64
+            print("after e1")
             #e1 = tf_layers.max_pool2d(net, [2, 2], scope='pool1')
 
             e2 = tf_layers.conv2d(e1, num_outputs=128)  # 64x64x128
@@ -52,7 +55,7 @@ def encoderNdecoder(
     # vt=[None]*views #view
     va = []
     for count in range(views):
-        with tf.variable_scope("decoder_{}".format(count)):
+        with tf.name_scope("decoder_{}".format(count)):
             d6 = tf_layers.dropout(upsample(encoded, 512))  # 4X4x512
             d5 = tf_layers.dropout(
                 upsample(tf.concat([d6, e6], 3), 512))  # 8X8X512
@@ -144,6 +147,10 @@ def _pretty_print(var_names):
         if "decoder" in var:
             print(var)
 
+def keras_model(inputs=tf.keras.Input(shape=(None,256,256,2), dtype=tf.float32)):
+    results = encoderNdecoder(inputs,out_channels=5,
+        views=12)
+    return tf.keras.Model(inputs=inputs, outputs=results)
 
 def test():
 

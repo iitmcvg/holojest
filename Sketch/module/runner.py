@@ -7,8 +7,6 @@ import os
 import time
 
 import module.config as config
-config.init()
-
 
 main_dir = config.main_dir
 training_iter = config.training_iter
@@ -29,8 +27,11 @@ init = tf.global_variables_initializer()
 linit = tf.local_variables_initializer()
 
 with tf.Session() as sess:
+    print("in sess")
     sess.run(init)
     sess.run(linit)
+    sess.run(source_iterator.initializer)
+    sess.run(target_iterator.initializer)
     for epoch in range(training_iter):
         tic = time.clock()
         print("Starting epoch {}".format(epoch + 1))
@@ -38,13 +39,16 @@ with tf.Session() as sess:
         sess.run(target_iterator.initializer)
 
         for batch in range((name_list.shape[0] // batch_size) + 1):
-            print("training batch {} .....".format(batch + 1))
-            l = sess.run(cost)
-            opt = sess.run(optimizer)
-            acc = sess.run(accuracy)
-        print()
-        print("Epoch {} summary".format(epoch + 1))
-        print("     loss = {} ".format(l))
-        print("     accuracy = {}".format(acc))
-        toc = time.clock()
-        print("     Time taken :{}".format((toc - tic) / 60))
+            try:
+                print("training batch {} .....".format(batch + 1))
+                l = sess.run(cost)
+                opt = sess.run(optimizer)
+                acc = sess.run(accuracy)
+            except tf.errors.OutOfRangeError:
+                print()
+                print("Epoch {} summary".format(epoch + 1))
+                print("     loss = {} ".format(l))
+                print("     accuracy = {}".format(acc))
+                toc = time.clock()
+                print("     Time taken :{}".format((toc - tic) / 60))
+                break

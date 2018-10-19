@@ -1,3 +1,4 @@
+
 import tensorflow as tf
 import numpy as np
 import module.config as config
@@ -54,22 +55,28 @@ def read_sketch(name, value=0, size=256):
     return np.float32(temp)
 
 
-def source(name_list, batched=True):
+def source(name_list, batched=True, eager=False):
     source_dataset = tf.data.Dataset.from_tensor_slices(name_list)
-
+    
     def map_fn(name): return tf.py_func(read_sketch, [name], [tf.float32])
-    source_dataset.apply(
-        tf.contrib.data.map_and_batch(
-            map_fn,
-            batch_size,
-            num_parallel_batches=config.num_parallel_batches))
-    # source_dataset=source_dataset.map(lambda name:tf.py_func(read_sketch,[name],[tf.float32]))
-    # if (batched):
-    #     source_dataset=source_dataset.batch(batch_size)
-    source_dataset = source_dataset.repeat(training_iter)
+
+    # if not eager:
+    #     source_dataset.apply(
+    #         tf.contrib.data.map_and_batch(
+    #             map_fn,
+    #             batch_size,
+    #             num_parallel_batches=config.num_parallel_batches))
+    # else:
+    source_dataset=source_dataset.map(lambda name:tf.py_func(read_sketch,[name],[tf.float32]))
+    if (batched):
+        source_dataset=source_dataset.batch(batch_size)
+    #source_dataset = source_dataset.repeat()
     source_dataset = source_dataset.prefetch(
         buffer_size=config.prefetch_buffer_size)
-    iter = source_dataset.make_initializable_iterator()
+    if not eager:
+        iter = source_dataset.make_initializable_iterator()
+    else:
+        iter = source_dataset.make_one_shot_iterator()
     return iter
 
 
@@ -113,7 +120,7 @@ def read_dnfs(name, views=12, size=256):
     return np.float32(results)
 
 
-def target(name_list, batched):
+def target(name_list, batched, eager = False):
     target_dataset = tf.data.Dataset.from_tensor_slices(name_list)
     target_dataset = target_dataset.map(
         lambda name: tf.py_func(
@@ -121,15 +128,21 @@ def target(name_list, batched):
                 tf.float32]))
     if (batched):
         target_dataset = target_dataset.batch(batch_size)
-    target_dataset = target_dataset.repeat(training_iter)
-    iter = target_dataset.make_initializable_iterator()
+    #iter = target_dataset.repeat()
+    terget_dataset = target_dataset.prefetch(
+        buffer_size=config.prefetch_buffer_size)
+
+    if not eager:   
+        iter = target_dataset.make_initializable_iterator()
+    else:
+        iter = target_dataset.make_one_shot_iterator()
     return iter
 
 
-def load_data(name_list, batched=False):
+def load_data(name_list, batched=True, eager = False):
     """
     return iterators
     """
-    si = source(name_list, batched)
-    ti = target(name_list, batched)
+    si = source(name_list, batched, eager = eager)
+    ti = target(name_list, batched, eager = eager)
     return si, ti
