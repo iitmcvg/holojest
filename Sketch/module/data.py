@@ -34,12 +34,13 @@ def normalize_image(image):
         return image.astype("float")
 
 
-def read_sketch(name, value=0, size=256):
+def read_sketch(name, value=0):
     # value 0 to 3
     """
-    direcorty:main/sketch/
-    view:f s
-    return: size x size x 2
+    name:passed from name_list
+    value:[0..3] each gives a dataset of [256,256,2]
+    
+    return:[256,256,2] dtype=float32
     """
     name = name.decode('utf-8')
 
@@ -55,24 +56,33 @@ def read_sketch(name, value=0, size=256):
     return np.float32(temp)
 
 
-def source(name_list, batched=True, eager=False):
+def source(name_list,eager=False):
+    """
+    return :Source dataset iterator
+        if not eager:
+        initialiazable dataset iterator 
+        
+        if eager:
+            one_shot_iterator
+            
+    Note:retrun of iter.get_next is  a tuple
+    """
     source_dataset = tf.data.Dataset.from_tensor_slices(name_list)
     
     def map_fn(name): return tf.py_func(read_sketch, [name], [tf.float32])
 
-    # if not eager:
-    #     source_dataset.apply(
-    #         tf.contrib.data.map_and_batch(
-    #             map_fn,
-    #             batch_size,
-    #             num_parallel_batches=config.num_parallel_batches))
-    # else:
-    source_dataset=source_dataset.map(lambda name:tf.py_func(read_sketch,[name],[tf.float32]))
-    if (batched):
-        source_dataset=source_dataset.batch(batch_size)
-    #source_dataset = source_dataset.repeat()
+    if not eager:
+        source_dataset=source_dataset.apply(tf.contrib.data.map_and_batch(
+            lambda name:tf.py_func(read_sketch,[name],[tf.float32]),
+            batch_size,
+            num_parallel_batches=config.num_parallel_batches))
+            
+    else:
+        source_dataset=source_dataset.map(lambda name:tf.py_func(read_sketch,[name],[tf.float32]))
+        
     source_dataset = source_dataset.prefetch(
         buffer_size=config.prefetch_buffer_size)
+        
     if not eager:
         iter = source_dataset.make_initializable_iterator()
     else:
@@ -80,11 +90,10 @@ def source(name_list, batched=True, eager=False):
     return iter
 
 
-def read_dnfs(name, views=12, size=256):
+def read_dnfs(name, views=12):
     """
-    direcorty:main/dnfs/subject
-    view:0 .. 11
-    return size x size x 5
+    name:passed from name_list
+    return:[12,256,256,5] dtype=float32
     """
     name = name.decode('utf-8')
     target_directory = os.path.join(dnfs_dir, name)
@@ -120,15 +129,26 @@ def read_dnfs(name, views=12, size=256):
     return np.float32(results)
 
 
-def target(name_list, batched, eager = False):
+def target(name_list, eager = False):
+    """
+    return :target dataset iterator
+        if not eager:
+        initialiazable dataset iterator 
+        
+        if eager:
+            one_shot_iterator
+            
+    Note:retrun of iter.get_next is  a tuple
+    """
     target_dataset = tf.data.Dataset.from_tensor_slices(name_list)
-    target_dataset = target_dataset.map(
-        lambda name: tf.py_func(
-            read_dnfs, [name], [
-                tf.float32]))
-    if (batched):
-        target_dataset = target_dataset.batch(batch_size)
-    #iter = target_dataset.repeat()
+    if not eager:
+       target_dataset=target_dataset.apply(tf.contrib.data.map_and_batch(
+           lambda name:tf.py_func(read_dnfs,[name],[tf.float32]),
+           batch_size,
+           num_parallel_batches=config.num_parallel_batches))
+    else:
+       target_dataset=target_dataset.map(lambda name:tf.py_func(read_sketch,[name],[tf.float32]))
+       
     terget_dataset = target_dataset.prefetch(
         buffer_size=config.prefetch_buffer_size)
 
@@ -139,10 +159,10 @@ def target(name_list, batched, eager = False):
     return iter
 
 
-def load_data(name_list, batched=True, eager = False):
+def load_data(name_list, eager = False):
     """
     return iterators
     """
-    si = source(name_list, batched, eager = eager)
-    ti = target(name_list, batched, eager = eager)
+    si = source(name_list, eager = eager)
+    ti = target(name_list, eager = eager)
     return si, ti

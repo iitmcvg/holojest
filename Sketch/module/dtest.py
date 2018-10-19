@@ -15,4 +15,6 @@ target = target_iterator.get_next()
 with tf.Session() as sess:
     sess.run(source_iterator.initializer)
     sess.run(target_iterator.initializer)
+    print(sess.run(source[0]).shape)
+    print("target")
     print(sess.run(target[0]).shape)

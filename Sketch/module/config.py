@@ -11,7 +11,7 @@ dnfs_dir = os.path.join(os.getcwd(),'data_char/dnfs')
 # Loss tuning
 
 # Train configs
-training_iter = 20
+training_iter = 2
 batch_size = 2
 learning_rate = .0001
 
