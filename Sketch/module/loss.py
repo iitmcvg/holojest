@@ -51,7 +51,6 @@ def mask_loss(pred, truth):
     nloss = loss / (256 * 256)
     return nloss
 
-
 def total_loss(pred, truth):
     """
     pred=nxhxwx5
@@ -70,4 +69,3 @@ def total_loss(pred, truth):
     nl = normal_loss(normal_pred, normal_truth, mask_truth)
     ml = mask_loss(mask_pred, mask_truth)
     return (dl + ml + nl)
-    # return(nl)

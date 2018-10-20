@@ -127,9 +127,16 @@ def upsample(
         activation_fn=activation_fn)
 
 
-# def Unet(images,out_channels=5,batch_size=2):
-#     decoded=encoderNdecoder(images,out_channels)
-#     return decoded
+        
+    
+    
+
+
+
+
+########################################
+########################################
+########################################
 
 def _pretty_print(var_names):
     '''
