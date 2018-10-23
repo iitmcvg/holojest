@@ -1,7 +1,7 @@
 import tensorflow as tf 
 import module.config
 
-import tf.keras.layers.CONV2D as conv2d
+import tf.keras.layers.Conv2D as conv2d
 import tf.keras.models.Model as Model
 import tf.keras.layers.LeakyReLU as leaky_relu
 import tf.keras.layers.BatchNormalization as batch_norm
@@ -10,9 +10,9 @@ import tf.keras.layers.Conv2DTranspose as deconv
 import tf.keras.layers.Dropout as dropout
 
 
-def network():
+def network(inputs=tf.keras.Input((256,256,2)):
     views=12
-    image=tf.keras.layers.Input(shape=(256,256,2))
+    # image=tf.keras.layers.Input(shape=(256,256,2))
     with tf.name_scope("encoder"):
         
         net=conv2d(filters=64,kernel_size=4,
@@ -102,18 +102,34 @@ def network():
 
             va.append(decoded)
             
-    # model=Model(input=Inputs,outputs=[va[0],va[1],va[2],va[3],va[4],va[5],
-    #                                 va[6],va[7],va[8],va[9],va[10],va[11]])
-    model=Model(input=image,output=va)
-    return model
+        results = tf.stack(
+            (va[0],
+             va[1],
+                va[2],
+                va[3],
+                va[4],
+                va[5],
+                va[6],
+                va[7],
+                va[8],
+                va[9],
+                va[10],
+                va[11]),
+            axis=-1)
+        results = tf.transpose(results, [0, 4, 1, 2, 3])
+            
+    
+    return results
                                     
     
     
 ###########################################################3
 import numpy as np
-model=network()
+
 images=np.random.rand([2,256,256,2])
-model.
+#image=tf.keras.layers.Input(shape=(256,256,2))
+logits=network(images)
+print(logits.shape)
 
             
             
