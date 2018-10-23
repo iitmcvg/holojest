@@ -10,55 +10,56 @@ import tf.keras.layers.Conv2DTranspose as deconv
 import tf.keras.layers.Dropout as dropout
 
 
-def decoder(images,view=12):
-    inputs=tf.keras.layers.Input(shape=(256,256,2))
+def network():
+    views=12
+    image=tf.keras.layers.Input(shape=(256,256,2))
     with tf.name_scope("encoder"):
         
         net=conv2d(filters=64,kernel_size=4,
                 strides=2,padding='same')(inputs) #256,256,64
         net=leaky_relu()(net)
-        net=batch_norm(name='e1')(net)
+        e1=batch_norm(name='e1')(net)
         
         net=conv2d(filters=128,kernel_size=4,
-                strides=2,padding='same')(net) #256,256,128
+                strides=2,padding='same')(e1) #256,256,128
         net=leaky_relu()(net)
-        net=batch_norm(name='e2')(net)
+        e2=batch_norm(name='e2')(net)
         
         net=conv2d(filters=256,kernel_size=4,
-                strides=2,padding='same')(net) #256,256,256
+                strides=2,padding='same')(e2) #256,256,256
         net=leaky_relu()(net)
-        net=batch_norm(name='e3')(net)
+        e3=batch_norm(name='e3')(net)
         
         net=conv2d(filters=512,kernel_size=4,
-                strides=2,padding='same')(net) #256,256,512
+                strides=2,padding='same')(e3) #256,256,512
         net=leaky_relu()(net)
-        net=batch_norm(name='e4')(net)
+        e4=batch_norm(name='e4')(net)
         
         net=conv2d(filters=512,kernel_size=4,
-                strides=2,padding='same')(net) #256,256,512
+                strides=2,padding='same')(e4) #256,256,512
         net=leaky_relu()(net)
-        net=batch_norm(name='e5')(net)
+        e5=batch_norm(name='e5')(net)
         
         net=conv2d(filters=512,kernel_size=4,
-                strides=2,padding='same')(net) #256,256,512
+                strides=2,padding='same')(e5) #256,256,512
         net=leaky_relu()(net)
-        net=batch_norm(name='e6')(net)
+        e6=batch_norm(name='e6')(net)
         
         net=conv2d(filters=512,kernel_size=4,
-                strides=2,padding='same')(net) #256,256,512
+                strides=2,padding='same')(e6) #256,256,512
         net=leaky_relu()(net)
         encoder_out=batch_norm(name='encoded')(net)
         
-    encoder=Model(input=inputs,outputs=enoder_out)
+    # encoder=Model(input=inputs,outputs=enoder_out)
     
-    view_array=[]
+    va=[] #view_array
     
-    e6=encoder.get_layer('e6').output
-    e5=encoder.get_layer('e5').output
-    e4=encoder.get_layer('e4').output
-    e3=encoder.get_layer('e3').output
-    e2=encoder.get_layer('e2').output
-    e1=encoder.get_layer('e1').output
+    # e6=encoder.get_layer('e6').output
+    # e5=encoder.get_layer('e5').output
+    # e4=encoder.get_layer('e4').output
+    # e3=encoder.get_layer('e3').output
+    # e2=encoder.get_layer('e2').output
+    # e1=encoder.get_layer('e1').output
     
     for view in range(views):
         with tf.name_scope("decoder_{}".format(view+1)):
@@ -99,7 +100,22 @@ def decoder(images,view=12):
                     activation=tf.keras.activations.tanh)(decoded)
             decoded=tf.keras.backend.l2_normalize (decoded,axis=[1,2,3])
 
-            view_array.append(decoded)
+            va.append(decoded)
+            
+    # model=Model(input=Inputs,outputs=[va[0],va[1],va[2],va[3],va[4],va[5],
+    #                                 va[6],va[7],va[8],va[9],va[10],va[11]])
+    model=Model(input=image,output=va)
+    return model
+                                    
+    
+    
+###########################################################3
+import numpy as np
+model=network()
+images=np.random.rand([2,256,256,2])
+model.
+
+            
             
     
 
