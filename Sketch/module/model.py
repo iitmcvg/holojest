@@ -75,7 +75,7 @@ def encoderNdecoder(
 
             decoded = tf.nn.l2_normalize(
                 decoded,
-                axis=[0, 1, 2, 3],
+                axis=[1, 2, 3],
                 epsilon=1e-12,
                 name=None,
                 dim=None
