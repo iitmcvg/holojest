@@ -2,8 +2,6 @@
 import module.config
 import tensorflow as tf
 import tensorflow.keras.layers as layers
-
-
 import tensorflow.keras.models as models
 
 def network(inputs=tf.keras.Input(shape=(256,256,2))):
@@ -116,7 +114,7 @@ def network(inputs=tf.keras.Input(shape=(256,256,2))):
 ###########################################################3
 import numpy as np
 
-images=np.random.rand([2,256,256,2])
+images=np.random.rand((2,256,256,2))
 #image=tf.keras.layers.Input(shape=(256,256,2))
 logits=network(images)
 print(logits.shape)

@@ -1,6 +1,7 @@
 import tensorflow as tf
 import numpy as np
 import module.config as config
+import module.adversial as adversial
 
 main_dir = config.main_dir
 training_iter = config.training_iter
@@ -53,7 +54,7 @@ def mask_loss(pred, truth):
 
 def total_loss(pred, truth):
     """
-    pred=nxhxwx5
+    pred=n,12,h,w,5
     truth is a tuple
     """
 
@@ -69,3 +70,44 @@ def total_loss(pred, truth):
     nl = normal_loss(normal_pred, normal_truth, mask_truth)
     ml = mask_loss(mask_pred, mask_truth)
     return (dl + ml + nl)
+def get_adversial_loss(pred,truth):
+    """
+    pred n,12,256,256,5
+    returns loss_gen,loss_adv
+    """
+    #generator loss
+    total_pixel_loss=total_loss(pred,truth)
+    loss_gen_adv=tf.reduce_sum(-tf.log(tf.maximum(prob_pred, 1e-6)))
+    loss_gen=config.lambda_pixel(total_pixel_loss)+config.lambda_adv(loss_gen_adv)
+    #adversial loss
+    view_pred=np.transpose(pred,[1,0,2,3,4])
+    view_truth=np.transpose(truth,[1,0,2,3,4])
+    
+    prob_pred=adversial.discriminate(view_pred[0,:,:,:,:])
+    prob_truth=adversial.discriminate(truth[0][0,:,:,:,:])
+    
+    for i in range(1,12):
+        temp_pred=adversial.discriminate(view_pred[i,:,:,:,:])
+        temp_truth=adversial.discriminate(truth[0][i,:,:,:,:])
+        prob_pred=tf.concat([prob_pred,temp_pred],axis=0)
+        prob_truth=tf.concat([prob_truth,temp_truth],axis=0)
+    
+    loss_on_truth = tf.reduce_sum(-tf.log(tf.maximum(prob_truth, 1e-6)))
+    loss_on_pred = tf.reduce_sum(-tf.log(tf.maximum(1.0-prob_preds, 1e-6)))
+    loss_adv=loss_on_truth+loss_on_pred
+    return loss_gen,loss_adv
+    
+##
+if __name__ =="__main__":
+    import numpy
+    pred=np.random.random_sample([3,12,256,256,5])
+    truth=np.random.random_sample([3,12,256,256,5])
+    loss_gen,loss_adv=get_adversial_loss(pred,truth)
+    with tf.Session() as sess:
+        sess.run(tf.global_variables_initializer())
+        lg=sess.run(loss_gen)
+        la=sess.run(loss_adv)
+        print(lg)
+        print(la)
+    
+    
