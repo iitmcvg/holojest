@@ -7,7 +7,9 @@ import tensorflow.contrib.framework as framework
 def discriminate(images):
     """
     input:[n,h,w,5]
+    returns probs n,1
     """
+    images=tf.reshape(images,[-1,256,256,5])
     with tf.name_scope("discriminator"):
         with framework.arg_scope([layers.conv2d],kernel_size=4,stride=2,activation_fn=tf.nn.leaky_relu,
                 normalizer_fn=tf.contrib.layers.batch_norm,padding="same"):
@@ -19,21 +21,20 @@ def discriminate(images):
             net=layers.conv2d(net,num_outputs=512)
             net=layers.conv2d(net,num_outputs=512)
         
-        net=layers.fully_connected(net,num_outputs=2048,activation_fn=tf.nn.leaky_relu)
-        net=layers.Dense(net,units=1,activation=sigmoid)
+        probs=tf.reshape(net,[-1,2048])
+        probs=layers.fully_connected(probs,num_outputs=1,activation_fn=tf.nn.sigmoid)
+        
     
-    return net
+    return probs
 
-def get_view_predictions(images):
-    """
-    images:[n,12,256,256,5] #output of decoder
-    
-    return 12xnx1
-    """
-    images=tf.transpose(images,[1,0,2,3,4])
-    vp=[]
-    for view in range(12):
-        prediction=adversial.discriminate(images[view,:,:,:,:]) #nx1
-        vp.append(prediction)
-    vp=tf.stack(vp,axis=0)
-    return vp
+    ##########################################
+                
+def test():
+
+    dummy_sketch = np.random.randn(4,256, 256, 5) * 50 + 255
+    dummy_sketch=dummy_sketch.astype(np.float32)
+    results = discriminate(dummy_sketch)
+
+
+if __name__ == "__main__":
+    test()
