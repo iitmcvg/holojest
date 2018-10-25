@@ -25,14 +25,12 @@ def encoderNdecoder(
     """
     images=tf.reshape(images,[-1,256,256,2])
     #images = tf.cast(images, tf.float32)
-    with tf.name_scope("encoder"):
+    with tf.variable_scope("encoder"):
         with framework.arg_scope([tf_layers.conv2d],
                                  kernel_size=4, stride=2, normalizer_fn=normalizer_fn,
                                  activation_fn=tf.nn.leaky_relu, padding="same"):
-            print("in encoderNdecoder")
-            print(images[0].shape)
             e1 = tf_layers.conv2d(images, num_outputs=64)  # 256 x 256 x 64
-            print("after e1")
+
             #e1 = tf_layers.max_pool2d(net, [2, 2], scope='pool1')
 
             e2 = tf_layers.conv2d(e1, num_outputs=128)  # 64x64x128
@@ -55,7 +53,7 @@ def encoderNdecoder(
     # vt=[None]*views #view
     va = []
     for count in range(views):
-        with tf.name_scope("decoder_{}".format(count)):
+        with tf.variable_scope("decoder_{}".format(count)):
             d6 = tf_layers.dropout(upsample(encoded, 512))  # 4X4x512
             d5 = tf_layers.dropout(
                 upsample(tf.concat([d6, e6], 3), 512))  # 8X8X512
@@ -86,19 +84,8 @@ def encoderNdecoder(
     # width = images.get_shape()[2].value
     # results = tf.reshape(tf.transpose(tf.stack(vt), [1,0,2,3,4]), [-1, height, width,out_channels])
     results = tf.stack(
-        (va[0],
-         va[1],
-            va[2],
-            va[3],
-            va[4],
-            va[5],
-            va[6],
-            va[7],
-            va[8],
-            va[9],
-            va[10],
-            va[11]),
-        axis=-1)
+        (va[0],va[1],va[2],va[3],va[4],va[5],
+        va[6],va[7],va[8],va[9],va[10],va[11]),axis=-1)
     results = tf.transpose(results, [0, 4, 1, 2, 3])
 
     return results

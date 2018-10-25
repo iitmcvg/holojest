@@ -1,3 +1,4 @@
+
 import data
 import loss
 import model
@@ -5,6 +6,9 @@ import tensorflow as tf
 import numpy as np
 import os
 import time
+import sys
+import module.adversial as adversial
+#from memory_saving_gradients import gradients
 
 import module.config as config
 
@@ -19,36 +23,83 @@ source_iterator, target_iterator = data.load_data(name_list)
 source = source_iterator.get_next()
 target = target_iterator.get_next()
 
+#predictions
 pred = model.encoderNdecoder(source)
-cost = loss.total_loss(pred, target)
-accuracy, _ = tf.metrics.accuracy(labels=target, predictions=pred)
-optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(cost)
-init = tf.global_variables_initializer()
-linit = tf.local_variables_initializer()
+#probabilit
+view_pred=tf.transpose(pred,[1,0,2,3,4])
+view_truth=tf.transpose(target[0],[1,0,2,3,4])# so that views are in the first dimension
+view_truth=tf.reshape(view_truth,[12,-1,256,256,5])
+#[12,?,256,256,5]
 
-with tf.Session() as sess:
-    print("in sess")
-    sess.run(init)
-    sess.run(linit)
-    sess.run(source_iterator.initializer)
-    sess.run(target_iterator.initializer)
-    for epoch in range(training_iter):
-        tic = time.clock()
-        print("Starting epoch {}".format(epoch + 1))
-        sess.run(source_iterator.initializer)
-        sess.run(target_iterator.initializer)
+probs_input=tf.concat([view_pred[0,:,:,:,:]
+                    ,view_truth[0,:,:,:,:]],axis=0)
+probs=adversial.discriminate(probs_input)
+prob_pred,prob_truth=tf.split(probs,2,axis=0)
 
-        for batch in range((name_list.shape[0] // batch_size) + 1):
-            try:
-                print("training batch {} .....".format(batch + 1))
-                l = sess.run(cost)
-                opt = sess.run(optimizer)
-                acc = sess.run(accuracy)
-            except tf.errors.OutOfRangeError:
-                print()
-                print("Epoch {} summary".format(epoch + 1))
-                print("     loss = {} ".format(l))
-                print("     accuracy = {}".format(acc))
-                toc = time.clock()
-                print("     Time taken :{}".format((toc - tic) / 60))
-                break
+for i in range(1,12):
+    probs_input=tf.concat([view_pred[i,:,:,:,:]
+                        ,view_truth[i,:,:,:,:]],axis=0)
+    probs=adversial.discriminate(probs_input)
+    temp_pred,temp_truth=tf.split(probs,2,axis=0)
+    prob_pred=tf.concat([prob_pred,temp_pred],axis=0)
+    prob_truth=tf.concat([prob_truth,temp_truth],axis=0)
+print(prob_pred.shape)
+
+
+
+
+##cost = loss.total_loss(pred, target)
+# loss_gen,loss_adv=loss.get_adversial_loss(prob_pred,prob_truth,total_pixel_loss)
+# 
+# accuracy, _ = tf.metrics.accuracy(labels=target, predictions=pred)
+# # optimizer1 = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(loss_gen)
+# optimizer2=tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(loss_adv)
+# all_variables=tf.trainable_variables()
+# generator_vars=[var for var in all_variables if 'coder' in var.name]
+# #discriminator_vars=[var for var in all_variables if 'discri' in var.name]
+# print(len(generator_vars))
+# #print(len(discriminator_vars))
+# 
+# optimizer1 = tf.train.AdamOptimizer(learning_rate=learning_rate)
+# grads=gradients(loss_gen,generator_vars,checkpoints='memory')
+# grads_and_vars=list(zip(grads,generator_vars))
+# train_opt1=optimizer1.apply_gradients(grads_and_vars)
+# 
+# 
+# 
+# 
+# init = tf.global_variables_initializer()
+# linit = tf.local_variables_initializer()
+# 
+# n_batches=name_list.shape[0]//batch_size
+
+# with tf.Session() as sess:
+#     print("global start")
+#     sess.run(init)
+#     print("global stop")
+#     sess.run(linit)
+#     sess.run(source_iterator.initializer)
+#     sess.run(target_iterator.initializer)
+
+    # for epoch in range(training_iter):
+    #     tic = time.clock()
+    #     print("Starting epoch {}".format(epoch + 1))
+    #     sess.run(source_iterator.initializer)
+    #     sess.run(target_iterator.initializer)
+    # 
+    #     for batch in range((name_list.shape[0] // batch_size) + 1):
+    #         try:
+    #             sys.stdout.write('\r')
+    #             print("\t {} completed .....".format((batch+1)*100/n_batches),end=' ')
+    #             l = sess.run(cost)
+    #             opt1 = sess.run(optimizer1)
+    #             opt2 = sess.run(optimizer2) 
+    #             acc = sess.run(accuracy)
+    #         except tf.errors.OutOfRangeError:
+    #             print()
+    #             print("\t Epoch {} summary".format(epoch + 1))
+    #             print("\t loss = {} ".format(l))
+    #             print("\t accuracy = {}".format(acc))
+    #             toc = time.clock()
+    #             print("\t Time taken :{}".format((toc - tic) / 60))
+    #             break

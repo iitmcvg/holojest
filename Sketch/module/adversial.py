@@ -1,3 +1,4 @@
+
 import tensorflow as tf
 import module.config
 import numpy as np
