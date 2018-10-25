@@ -41,6 +41,7 @@ def encoderNdecoder(
             # e3 = tf_layers.max_pool2d(net, [2, 2], scope='pool1')
 
             e4 = tf_layers.conv2d(e3, num_outputs=512)  # 16x16x512
+            tf.add_to_collection('checkpoints',e4)
             # e4 = tf_layers.max_pool2d(net, [2, 2], scope='pool1')
 
             e5 = tf_layers.conv2d(e4, num_outputs=512)  # 8x8x512
@@ -50,6 +51,7 @@ def encoderNdecoder(
             # e6 = tf_layers.max_pool2d(net, [2, 2], scope='pool1')
 
             encoded = tf_layers.conv2d(e6, num_outputs=512)  # 2X2X512
+            tf.add_to_collection('checkpoints',encoded)
 
     # vt=[None]*views #view
     va = []
@@ -59,9 +61,13 @@ def encoderNdecoder(
             d5 = tf_layers.dropout(
                 upsample(tf.concat([d6, e6], 3), 512))  # 8X8X512
             d4 = upsample(tf.concat([d5, e5], 3), 512)  # 16x16x512
+            tf.add_to_collection('checkpoints',d4)
             d3 = upsample(tf.concat([d4, e4], 3), 256)  # 32x32x256
             d2 = upsample(tf.concat([d3, e3], 3), 128)  # 64x64x128
+            tf.add_to_collection('checkpoints',d2)
             d1 = upsample(tf.concat([d2, e2], 3), 64)  # 128x128x64
+            tf.add_to_collection('checkpoints',d1)
+            #tf.add_to_collection('checkpoints',d4)
             decoded = upsample(
                 tf.concat(
                     [
