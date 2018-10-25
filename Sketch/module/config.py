@@ -3,10 +3,16 @@ Config params
 '''
 import os
 
-main_dir = os.path.join(os.getcwd(),'data_char')
-name_list_path = os.path.join(os.getcwd(),'data_char/list.txt')
-sketch_dir = os.path.join(os.getcwd(),'data_char/sketch')
-dnfs_dir = os.path.join(os.getcwd(),'data_char/dnfs')
+# main_dir = os.path.join(os.getcwd(),'data_char')
+# name_list_path = os.path.join(os.getcwd(),'data_char/list.txt')
+# sketch_dir = os.path.join(os.getcwd(),'data_char/sketch')
+# dnfs_dir = os.path.join(os.getcwd(),'data_char/dnfs')
+
+home=os.path.expanduser('~')
+main_dir=os.path.join(home,'TrainingData','Character')
+sketch_dir=os.path.join(main_dir,'sketch')
+dnfs_dir=os.path.join(main_dir,'dn')
+name_list_path=os.path.join(main_dir,'train_list.txt')
 
 is_adversial=False
 # Loss tuning
