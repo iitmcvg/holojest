@@ -8,7 +8,7 @@ import os
 import time
 import sys
 import module.adversial as adversial
-#from memory_saving_gradients import gradients
+from module.memory_saving_gradients import gradients
 
 import module.config as config
 
@@ -43,27 +43,28 @@ for i in range(1,12):
     temp_pred,temp_truth=tf.split(probs,2,axis=0)
     prob_pred=tf.concat([prob_pred,temp_pred],axis=0)
     prob_truth=tf.concat([prob_truth,temp_truth],axis=0)
-print(prob_pred.shape)
-
-
-
 
 ##cost = loss.total_loss(pred, target)
-# loss_gen,loss_adv=loss.get_adversial_loss(prob_pred,prob_truth,total_pixel_loss)
+total_pixel_loss=loss.total_loss(pred,target)
+loss_gen,loss_adv=loss.get_adversial_loss(prob_pred,prob_truth,total_pixel_loss)
 # 
-# accuracy, _ = tf.metrics.accuracy(labels=target, predictions=pred)
+accuracy, _ = tf.metrics.accuracy(labels=target, predictions=pred)
 # # optimizer1 = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(loss_gen)
 # optimizer2=tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(loss_adv)
-# all_variables=tf.trainable_variables()
-# generator_vars=[var for var in all_variables if 'coder' in var.name]
-# #discriminator_vars=[var for var in all_variables if 'discri' in var.name]
-# print(len(generator_vars))
-# #print(len(discriminator_vars))
-# 
-# optimizer1 = tf.train.AdamOptimizer(learning_rate=learning_rate)
-# grads=gradients(loss_gen,generator_vars,checkpoints='memory')
-# grads_and_vars=list(zip(grads,generator_vars))
-# train_opt1=optimizer1.apply_gradients(grads_and_vars)
+all_variables=tf.trainable_variables()
+generator_vars=[var for var in all_variables if 'coder' in var.name]
+#discriminator_vars=[var for var in all_variables if 'discri' in var.name]
+print(len(generator_vars))
+#print(len(discriminator_vars))
+
+optimizer1 = tf.train.AdamOptimizer(learning_rate=learning_rate)
+print('1')
+grads=gradients(loss_gen,generator_vars,checkpoints='memory')
+print('1')
+grads_and_vars=list(zip(grads,generator_vars))
+print('1')
+train_opt1=optimizer1.apply_gradients(grads_and_vars)
+print('1')
 # 
 # 
 # 

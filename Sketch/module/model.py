@@ -1,3 +1,4 @@
+
 import numpy as np
 import tensorflow as tf
 import tensorflow.contrib.layers as tf_layers
@@ -75,8 +76,7 @@ def encoderNdecoder(
                 decoded,
                 axis=[1, 2, 3],
                 epsilon=1e-12,
-                name=None,
-                dim=None
+                name=None
             )
             va.append(decoded)
 
