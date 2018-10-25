@@ -72,9 +72,7 @@ linit = tf.local_variables_initializer()
 n_batches=name_list.shape[0]//batch_size
 
 with tf.Session() as sess:
-    print("global start")
     sess.run(init)
-    print("global stop")
     sess.run(linit)
     sess.run(source_iterator.initializer)
     sess.run(target_iterator.initializer)

@@ -12,7 +12,7 @@ home=os.path.expanduser('~')
 main_dir=os.path.join(home,'TrainingData','Character')
 sketch_dir=os.path.join(main_dir,'sketch')
 dnfs_dir=os.path.join(main_dir,'dn')
-name_list_path=os.path.join(main_dir,'train_list.txt')
+name_list_path=os.path.join(main_dir,'train-list.txt')
 
 is_adversial=False
 # Loss tuning

@@ -125,7 +125,6 @@ def read_dnfs(name, views=12):
             va[10],
             va[11]),
         axis=0)
-    print("reading data of {} ".format(name))
     return np.float32(results)
 
 
