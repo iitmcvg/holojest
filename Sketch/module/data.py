@@ -1,4 +1,5 @@
 
+
 import tensorflow as tf
 import numpy as np
 import module.config as config
@@ -112,19 +113,9 @@ def read_dnfs(name, views=12):
         temp = np.stack((depth_map, nx, ny, nz, mask), axis=-1)
         va.append(temp)
     results = np.stack(
-        (va[0],
-         va[1],
-            va[2],
-            va[3],
-            va[4],
-            va[5],
-            va[6],
-            va[7],
-            va[8],
-            va[9],
-            va[10],
-            va[11]),
-        axis=0)
+        (va[0],va[1],va[2],va[3],va[4],
+        va[5],va[6],va[7],va[8],va[9],va[10],
+        va[11]),axis=0)
     return np.float32(results)
 
 

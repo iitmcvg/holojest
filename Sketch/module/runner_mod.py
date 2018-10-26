@@ -1,3 +1,5 @@
+
+
 import tensorflow as tf
 import numpy as np
 import os
@@ -22,9 +24,13 @@ source_iterator, target_iterator = data.load_data(name_list)
 source = source_iterator.get_next()
 target = target_iterator.get_next()
 
+print(tf.reshape(source[0],[-1,256,256,2]).shape)
+
 #predictions
 pred = model.encoderNdecoder(source)
 total_pixel_loss=loss.total_loss(pred,target)
+global_step=tf.Variable(0,dtype=tf.int32,trainable=False,name='global_step')
+
 
 if(config.is_adversial):
     #probabilities
@@ -41,7 +47,6 @@ if(config.is_adversial):
     stacked_truth=tf.concat(stacked_truth,axis=0)
     #[?,256,256,5]
     probs_input=tf.concat([stacked_pred,stacked_truth],axis=0)
-    print(probs_input.shape)
     probs=adversial.discriminate(probs_input)
     prob_pred,prob_truth=tf.split(probs,2,axis=0)
 
@@ -54,14 +59,12 @@ if(config.is_adversial):
     all_variables=tf.trainable_variables()
     generator_vars=[var for var in all_variables if 'coder' in var.name]
     disc_vars=[var for var in all_variables if 'discri' in var.name]
-    print(len(disc_vars))
-    print(len(generator_vars))
-
+    
     # Encoder decoder
     optimizer1 = tf.train.AdamOptimizer(learning_rate=learning_rate)
     grads=gradients(loss_gen,generator_vars, checkpoints= "memory")
     grads_and_vars=list(zip(grads,generator_vars))
-    optimizer1 = optimizer1.apply_gradients(grads_and_vars)
+    optimizer1 = optimizer1.apply_gradients(grads_and_vars,global_step=global_step)
 
     # Discriminator
     grads2=gradients(loss_adv,disc_vars, checkpoints= "memory")
@@ -69,19 +72,38 @@ if(config.is_adversial):
     optimizer2=tf.train.AdamOptimizer(learning_rate=learning_rate)
     optimizer2 = optimizer2.apply_gradients(grads_and_vars2) 
 else:
-    optimizer1 = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(total_pixel_loss)
+    optimizer1 = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(total_pixel_loss,global_step=global_step)
 
 init = tf.global_variables_initializer()
 linit = tf.local_variables_initializer()
 
 n_batches=name_list.shape[0]//batch_size
+#summary
+
+saver=tf.train.Saver(keep_checkpoint_every_n_hours=2)
+with tf.name_scope("summaries"):
+    tf.summary.scalar('Pixel loss',total_pixel_loss)
+    tf.summary.scalar('Gen loss',loss_gen)
+    tf.summary.scalar('Adv loss',loss_adv)
+    tf.summary.scalar('Accuracy',accuracy)
+    #image summaries
+    # tf.reshape(source[0],[-1,256,256,2])
+    tf.summary.image("Input",tf.expand_dims(tf.reshape(source[0],[-1,256,256,2])[:,:,:,0],axis=-1), max_outputs=4)
+    target_display=tf.concat([stacked_truth[:,:,:,1:4],tf.expand_dims(stacked_truth[:,:,:,0],axis=-1)],axis=-1)
+    tf.summary.image("Ground Truth",target_display,max_outputs=4)
+    pred_display=tf.concat([stacked_pred[:,:,:,1:4],tf.expand_dims(stacked_pred[:,:,:,0],axis=-1)],axis=-1)
+    tf.summary.image("Ground Prediction",pred_display,max_outputs=4)
+    perfomance_summary=tf.summary.merge_all()
+    
 
 with tf.Session() as sess:
     sess.run(init)
     sess.run(linit)
     sess.run(source_iterator.initializer)
     sess.run(target_iterator.initializer)
-
+    tf.summary.FileWriterCache.clear()
+    train_writer = tf.summary.FileWriter(config.log_dir, sess.graph)
+    
     for epoch in range(training_iter):
         tic = time.clock()
         print("Starting epoch {}".format(epoch + 1))
@@ -91,7 +113,7 @@ with tf.Session() as sess:
         for batch in range((name_list.shape[0] // batch_size) + 1):
             try:
                 sys.stdout.write('\r')
-                print("\t {} completed .....".format((batch+1)*100/n_batches),end=' ')
+                print("\t {}% completed .....".format((batch+1)*100/n_batches),end=' ')
                 if(config.is_adversial):
                     opt1 = sess.run(optimizer1)
                     opt2=sess.run(optimizer2)
@@ -99,9 +121,13 @@ with tf.Session() as sess:
                 else:
                     opt1 = sess.run(optimizer1)
                     l=sess.run(total_pixel_loss)
-                    
+                
                 acc = sess.run(accuracy)
+                summary=sess.run(perfomance_summary)
+                train_writer.add_summary(summary, batch)
+                
             except tf.errors.OutOfRangeError:
+                saver.save(sess,config.checkpoints_dir,global_step=global_step)
                 print()
                 print("\t Epoch {} summary".format(epoch + 1))
                 print("\t loss = {} ".format(l))
