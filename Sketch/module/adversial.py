@@ -11,7 +11,7 @@ def discriminate(images):
     returns probs n,1
     """
     images=tf.reshape(images,[-1,256,256,5])
-    with tf.name_scope("discriminator"):
+    with tf.variable_scope("discriminator", reuse= tf.AUTO_REUSE):
         with framework.arg_scope([layers.conv2d],kernel_size=4,stride=2,activation_fn=tf.nn.leaky_relu,
                 normalizer_fn=tf.contrib.layers.batch_norm,padding="same"):
             net=layers.conv2d(images,num_outputs=64)

@@ -1,15 +1,16 @@
 
+
 import numpy as np
 import tensorflow as tf
 import tensorflow.contrib.layers as tf_layers
 import tensorflow.contrib.framework as framework
 import module.config as config
+from functools import partial
 
 main_dir = config.main_dir
 training_iter = config.training_iter
 batch_size = config.batch_size
 learning_rate = config.learning_rate
-
 
 def encoderNdecoder(
         images,
@@ -160,6 +161,11 @@ def test():
     print(results.shape)
     _pretty_print([x.name for x in tf.global_variables()])
 
+encoderNdecoder_lite = partial(encoderNdecoder, out_channels=5,
+        views=12,
+        normalizer_fn=tf_layers.batch_norm,
+        activation=tf.nn.leaky_relu)
+encoderNdecoder_lite= tf.contrib.layers.recompute_grad(encoderNdecoder_lite)
 
 if __name__ == "__main__":
     test()
