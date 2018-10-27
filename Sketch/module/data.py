@@ -105,7 +105,7 @@ def read_dnfs(name, views=12):
                 target_directory,
                 "dn-256-{}.png".format(count)),
             cv2.IMREAD_UNCHANGED)
-        mask = encoded[:, :, 0] > 0.9
+        mask = encoded[:, :, 0] > config.mask_threshold
         depth_map = normalize_image(encoded[:, :, 0])
         nx = normalize_image(encoded[:, :, 1])
         ny = normalize_image(encoded[:, :, 2])
