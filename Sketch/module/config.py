@@ -1,3 +1,5 @@
+
+
 '''
 Config params
 '''
@@ -13,13 +15,23 @@ main_dir=os.path.join(home,'TrainingData','Character')
 sketch_dir=os.path.join(main_dir,'sketch')
 dnfs_dir=os.path.join(main_dir,'dn')
 name_list_path=os.path.join(main_dir,'train-list.txt')
-log_dir=os.path.join(home,'holojest','Sketch''logs')
-checkpoints_dir=log_dir=os.path.join(home,'holojest','Sketch''checkpoints')
+
+# Logging
+log_dir=os.path.join(home,'holojest','Sketch','logs')
+train_log_dir=os.path.join(log_dir,'train')
+if not os.path.exists(train_log_dir):
+    os.mkdir(train_log_dir)
+
+eval_log_dir=os.path.join(log_dir,'eval')
+if not os.path.exists(eval_log_dir):
+    os.mkdir(eval_log_dir)
+
+checkpoints_dir=os.path.join(home,'holojest','Sketch','checkpoints')
 
 is_adversial= True
 # Loss tuning
 lambda_pixel=1
-lambda_adv=0.01
+lambda_adv=0.1
 # Train configs
 training_iter = 2
 batch_size = 2
