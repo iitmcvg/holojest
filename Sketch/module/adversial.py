@@ -23,7 +23,7 @@ def discriminate(images):
             net=layers.conv2d(net,num_outputs=512)
         
         probs=tf.reshape(net,[-1,2048])
-        probs=layers.fully_connected(probs,num_outputs=1,activation_fn=tf.nn.sigmoid)
+        probs=layers.fully_connected(probs,num_outputs=2,activation_fn=tf.nn.sigmoid)
         
     
     return probs

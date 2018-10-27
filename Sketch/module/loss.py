@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 import module.config as config
 import module.adversial as adversial
-from tensorflow.nn import softmax_cross_entropy_with_logits_v2 as cross_entropy
+from tensorflow.nn import sparse_softmax_cross_entropy_with_logits as cross_entropy
 
 main_dir = config.main_dir
 training_iter = config.training_iter
@@ -83,15 +83,20 @@ def get_adversial_loss(prob_pred,prob_truth,total_pixel_loss):
     with tf.name_scope("adversarial_loss"):
         #loss_on_truth = tf.reduce_sum(-tf.log(tf.maximum(prob_truth, 1e-6)))
         #loss_on_pred = tf.reduce_sum(-tf.log(tf.maximum(1.0-prob_pred, 1e-6)))#pred are of class 0
-        loss_on_truth=cross_entropy(logits=prob_truth,labels=tf.ones_like(prob_truth))
+        truth_labels=tf.ones(tf.shape(prob_truth)[0],dtype=tf.int32)
+        loss_on_truth=cross_entropy(logits=prob_truth,labels=truth_labels)
         loss_on_truth=tf.reduce_mean(loss_on_truth)
-        loss_on_pred=cross_entropy(logits=prob_pred,labels=tf.zeros_like(prob_pred))
+        
+        pred_labels=tf.zeros(tf.shape(prob_pred)[0],dtype=tf.int32)
+        loss_on_pred=cross_entropy(logits=prob_pred,labels=pred_labels)
         loss_on_pred=tf.reduce_mean(loss_on_pred)
+        
         loss_adv=loss_on_truth+loss_on_pred
         #generators loss
         
         #loss_gen_adv=tf.reduce_sum(-tf.log(tf.maximum(prob_pred, 1e-6)))
-        loss_gen_adv=cross_entropy(logits=prob_pred,labels=tf.ones_like(prob_pred))
+        pred_labels_adv=tf.ones(tf.shape(prob_pred)[0],dtype=tf.int32)
+        loss_gen_adv=cross_entropy(logits=prob_pred,labels=pred_labels_adv)
         loss_gen_adv=tf.reduce_mean(loss_gen_adv)
         #for the adversory prediction should be of class 1 ,same as truth
         loss_gen=(config.lambda_pixel*total_pixel_loss) + (config.lambda_adv*loss_gen_adv)
