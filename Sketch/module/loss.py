@@ -52,7 +52,7 @@ def mask_loss(pred, truth):
         # loss = loss + tf.multiply((1 - truth), tf.log(tf.maximum(1e-6, 1 - pred)))
         # loss = tf.reduce_sum(-loss)
         # nloss = loss / (256 * 256)
-        nloss=tf.nn.softmax_cross_entropy_with_logits(logits=pred,labels=truth)
+        nloss=tf.nn.softmax_cross_entropy_with_logits_v2(logits=pred,labels=truth)
         nloss=tf.reduce_mean(nloss)
         num_pixels=tf.shape(pred)[1:]
         num_pixels=tf.reduce_prod(num_pixels)
