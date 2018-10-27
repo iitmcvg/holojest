@@ -22,9 +22,9 @@ lambda_pixel=1
 lambda_adv=0.01
 # Train configs
 training_iter = 2
-batch_size = 1
+batch_size = 2
 learning_rate = .0001
 
 # Data
 prefetch_buffer_size = 2
-num_parallel_batches = 1
+num_parallel_batches = 8
