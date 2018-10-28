@@ -1,5 +1,7 @@
 
 
+
+
 import tensorflow as tf
 import numpy as np
 import module.config as config
@@ -105,8 +107,9 @@ def read_dnfs(name, views=12):
                 target_directory,
                 "dn-256-{}.png".format(count)),
             cv2.IMREAD_UNCHANGED)
-        mask = encoded[:, :, 0] > config.mask_threshold
+        #mask = encoded[:, :, 0] > config.mask_threshold
         depth_map = normalize_image(encoded[:, :, 0])
+        mask = encoded[:, :, 0] > config.mask_threshold
         nx = normalize_image(encoded[:, :, 1])
         ny = normalize_image(encoded[:, :, 2])
         nz = normalize_image(encoded[:, :, 3])

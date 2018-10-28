@@ -1,3 +1,4 @@
+
 import tensorflow as tf
 import numpy as np
 import module.config as config
@@ -9,25 +10,31 @@ training_iter = config.training_iter
 batch_size = config.batch_size
 learning_rate = config.learning_rate
 
-def depth_loss(pred, truth, mask):
+def depth_loss(pred, truth, mask,normalize):
     """
     pred=nx12xhxwx1
     truth="
     mask="
     return normalized loss scalar
     """
+    
     with tf.name_scope("depth_loss"):
-        loss = tf.subtract(pred, truth)
+        loss = tf.subtract(tf.reshape(pred,[-1,12,256,256]),
+                            tf.reshape(truth,[-1,12,256,256]))
         loss = tf.abs(loss)
         loss = tf.multiply(loss, mask)
-        nloss = tf.reduce_mean(loss)
-        # nloss=nloss*pred.get_shape()[0].value
+        if(normalize):
+            nloss = tf.reduce_mean(loss)
+            nloss=nloss*tf.constant(config.batch_size*12,dtype=tf.float32)
+        else:
+            nloss=tf.reduce_sum(loss)
+    
         return nloss
 
 
-def normal_loss(pred, truth, mask):
+def normal_loss(pred, truth, mask,normalize):
     """
-    pred=nx12xhxwx1
+    pred=nx12xhxwx3
     truth="
     mask="
     return normalized loss scalar
@@ -36,30 +43,32 @@ def normal_loss(pred, truth, mask):
         loss = tf.subtract(pred, truth)
         m = mask
         mask = tf.stack((mask, m, m), -1)
-        loss = tf.abs(loss)
+        loss = tf.square(loss)
         loss = tf.multiply(loss, mask)
-        loss = tf.reduce_mean(loss)
-        return loss
+        if(normalize):
+            nloss = tf.reduce_mean(loss)
+            nloss=nloss*tf.constant(config.batch_size*12*3,dtype=tf.float32)
+        else:
+            nloss=tf.reduce_sum(loss)
+        return nloss
 
 
-def mask_loss(pred, truth):
+def mask_loss(pred, truth,normalize):
     # [-1,1] -> [0,1]
     with tf.name_scope("mask_loss"):
         pred = pred * 0.5 + 0.5
         truth = truth * 0.5 + 0.5
 
-        # loss = tf.multiply(truth, tf.log(tf.maximum(1e-6, pred)))
-        # loss = loss + tf.multiply((1 - truth), tf.log(tf.maximum(1e-6, 1 - pred)))
-        # loss = tf.reduce_sum(-loss)
-        # nloss = loss / (256 * 256)
-        nloss=tf.nn.softmax_cross_entropy_with_logits_v2(logits=pred,labels=truth)
-        nloss=tf.reduce_mean(nloss)
-        num_pixels=tf.shape(pred)[1:]
-        num_pixels=tf.reduce_prod(num_pixels)
-        nloss=nloss/tf.cast(num_pixels,dtype=tf.float32) 
+        loss = tf.multiply(truth, tf.log(tf.maximum(1e-6, pred)))
+        loss = loss + tf.multiply((1 - truth), tf.log(tf.maximum(1e-6, 1 - pred)))
+        loss = tf.reduce_sum(-loss)
+        if (normalize):
+            nloss = loss / tf.constant(12*256 * 256,dtype=tf.float32)
+        else:
+            nloss=loss
         return nloss
 
-def total_loss(pred, truth):
+def total_loss(pred, truth,normalize=config.loss_normalize):
     """
     pred=n,12,h,w,5
     truth is a tuple
@@ -75,10 +84,12 @@ def total_loss(pred, truth):
         normal_truth = truth[:,:, :, :, 1:4]
         mask_pred = pred[:, :, :, :, 4]
         mask_truth = truth[:,:, :, :, 4]
-
-        dl = depth_loss(depth_pred, depth_truth, mask_truth)
-        nl = normal_loss(normal_pred, normal_truth, mask_truth)
-        ml = mask_loss(mask_pred, mask_truth)
+        print("here")
+        print(mask_truth.shape)
+        print(tf.shape(mask_truth))
+        dl = depth_loss(depth_pred, depth_truth, mask_truth,normalize)
+        nl = normal_loss(normal_pred, normal_truth, mask_truth,normalize)
+        ml = mask_loss(mask_pred, mask_truth,normalize)
         return (dl + ml + nl)
 def get_adversial_loss(prob_pred,prob_truth,total_pixel_loss):
     """
