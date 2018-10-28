@@ -109,10 +109,19 @@ def read_dnfs(name, views=12):
             cv2.IMREAD_UNCHANGED)
         #mask = encoded[:, :, 0] > config.mask_threshold
         depth_map = normalize_image(encoded[:, :, 0])
-        mask = encoded[:, :, 0] > config.mask_threshold
+        #mask = encoded[:, :, 0] > config.mask_threshold
+        mask=np.less(depth_map,config.mask_threshold)
+        mask=mask.astype(dtype=np.float32)
         nx = normalize_image(encoded[:, :, 1])
         ny = normalize_image(encoded[:, :, 2])
         nz = normalize_image(encoded[:, :, 3])
+        
+        # depth_map=tf.reshape(depth_map,[256,256])
+        # nx=tf.reshape(nx,[256,256])
+        # ny=tf.reshape(ny,[256,256])
+        # nz=tf.reshape(nz,[256,256])
+        # mask=tf.reshape(mask,[256,256])
+        
         temp = np.stack((depth_map, nx, ny, nz, mask), axis=-1)
         va.append(temp)
     results = np.stack(
@@ -142,7 +151,7 @@ def target(name_list, eager = False):
     else:
        target_dataset=target_dataset.map(lambda name:tf.py_func(read_sketch,[name],[tf.float32]))
        
-    terget_dataset = target_dataset.prefetch(
+    target_dataset = target_dataset.prefetch(
         buffer_size=config.prefetch_buffer_size)
 
     if not eager:   

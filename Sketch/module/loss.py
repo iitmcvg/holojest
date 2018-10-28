@@ -57,7 +57,7 @@ def mask_loss(pred, truth,normalize):
     # [-1,1] -> [0,1]
     with tf.name_scope("mask_loss"):
         pred = pred * 0.5 + 0.5
-        truth = truth * 0.5 + 0.5
+        #truth is already 0,1
 
         loss = tf.multiply(truth, tf.log(tf.maximum(1e-6, pred)))
         loss = loss + tf.multiply((1 - truth), tf.log(tf.maximum(1e-6, 1 - pred)))
@@ -84,9 +84,6 @@ def total_loss(pred, truth,normalize=config.loss_normalize):
         normal_truth = truth[:,:, :, :, 1:4]
         mask_pred = pred[:, :, :, :, 4]
         mask_truth = truth[:,:, :, :, 4]
-        print("here")
-        print(mask_truth.shape)
-        print(tf.shape(mask_truth))
         dl = depth_loss(depth_pred, depth_truth, mask_truth,normalize)
         nl = normal_loss(normal_pred, normal_truth, mask_truth,normalize)
         ml = mask_loss(mask_pred, mask_truth,normalize)

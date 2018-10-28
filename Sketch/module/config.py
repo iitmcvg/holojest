@@ -33,7 +33,7 @@ checkpoints_dir=os.path.join(home,'holojest','Sketch','checkpoints')
 is_adversial= True
 # Loss tuning
 loss_normalize=True
-mask_threshold=0.5
+mask_threshold=0.9
 lambda_pixel=1
 lambda_adv=0.1
 # Train configs
