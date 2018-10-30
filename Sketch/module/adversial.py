@@ -17,9 +17,11 @@ def discriminate(images):
             net=layers.conv2d(images,num_outputs=64)
             net=layers.conv2d(net,num_outputs=128)
             net=layers.conv2d(net,num_outputs=256)
+            tf.add_to_collection('checkpoints',net)
             net=layers.conv2d(net,num_outputs=512)
             net=layers.conv2d(net,num_outputs=512)
             net=layers.conv2d(net,num_outputs=512)
+            tf.add_to_collection('checkpoints',net)
             net=layers.conv2d(net,num_outputs=512)
         
         probs=tf.reshape(net,[-1,2048])

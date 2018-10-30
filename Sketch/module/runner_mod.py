@@ -1,6 +1,4 @@
 
-
-
 import tensorflow as tf
 import numpy as np
 import os
@@ -20,21 +18,23 @@ batch_size = config.batch_size
 learning_rate = config.learning_rate
 name_list_path = config.name_list_path
 
-with tf.name_scope("Data_Loading"):
-    name_list = data.file_to_list(name_list_path)
-    source_iterator, target_iterator = data.load_data(name_list)
-    source = source_iterator.get_next()
-    target = target_iterator.get_next()
 
-#predictions
-pred = model.encoderNdecoder(source)
+if(config.is_training):
+    with tf.name_scope("Data_Loading"):
+        name_list = data.file_to_list(name_list_path)
+        source_iterator, target_iterator = data.load_data(name_list)
+        source = source_iterator.get_next()
+        target = target_iterator.get_next()
 
-# Global Step
-global_step=tf.Variable(0,dtype=tf.int32,trainable=False,name='global_step')
+    #predictions
+    pred = model.encoderNdecoder(source)
 
-# Gather Losses
-with tf.name_scope("Total_Losses"):
-    total_pixel_loss=loss.total_loss(pred,target)
+    # Global Step
+    global_step=tf.Variable(0,dtype=tf.int32,trainable=False,name='global_step')
+
+    # Gather Losses
+    with tf.name_scope("Total_Losses"):
+        total_pixel_loss=loss.total_loss(pred,target)
 
 
     if(config.is_adversial):
@@ -57,7 +57,7 @@ with tf.name_scope("Total_Losses"):
 
         loss_gen,loss_adv=loss.get_adversial_loss(prob_pred,prob_truth,total_pixel_loss)
 
-    accuracy, _ = tf.metrics.accuracy(labels=target, predictions=pred)
+
 
     if(config.is_adversial):
         print("Using adversarial network")
@@ -76,74 +76,79 @@ with tf.name_scope("Total_Losses"):
         grads_and_vars2 =list(zip(grads2,disc_vars))
         optimizer2=tf.train.AdamOptimizer(learning_rate=learning_rate)
         optimizer2 = optimizer2.apply_gradients(grads_and_vars2) 
+        
     else:
         optimizer1 = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(total_pixel_loss,global_step=global_step)
 
-init = tf.global_variables_initializer()
-linit = tf.local_variables_initializer()
+    init = tf.global_variables_initializer()
+    linit = tf.local_variables_initializer()
 
-n_batches=name_list.shape[0]//batch_size
+    n_batches=name_list.shape[0]//batch_size
 
-# Checkpoints
-saver=tf.train.Saver(keep_checkpoint_every_n_hours=2)
+    # Checkpoints
+    saver=tf.train.Saver(keep_checkpoint_every_n_hours=1)
 
-#summary
-with tf.name_scope("summaries"):
-    tf.summary.scalar('Pixel loss',total_pixel_loss)
-    tf.summary.scalar('Gen (Total) loss',loss_gen)
-    tf.summary.scalar('Adv loss',loss_adv)
-    tf.summary.scalar('Accuracy',accuracy)
-    # image summaries
-    tf.summary.image("Input",tf.expand_dims(tf.reshape(source[0],[-1,256,256,2])[:,:,:,0],axis=-1), max_outputs=4)
-    target_display=tf.concat([stacked_truth[:,:,:,1:4],tf.expand_dims(stacked_truth[:,:,:,0],axis=-1)],axis=-1)
-    tf.summary.image("Ground Truth",target_display,max_outputs=4)
-    pred_display=tf.concat([stacked_pred[:,:,:,1:4],tf.expand_dims(stacked_pred[:,:,:,0],axis=-1)],axis=-1)
-    tf.summary.image("Ground Prediction",pred_display,max_outputs=4)
-    perfomance_summary=tf.summary.merge_all()
+    #summary
+    with tf.name_scope("summaries"):
+        tf.summary.scalar('Pixel loss',total_pixel_loss)
+        tf.summary.scalar('Gen (Total) loss',loss_gen)
+        tf.summary.scalar('Adv loss',loss_adv)
+
+        # image summaries
+        tf.summary.image("Input",tf.expand_dims(tf.reshape(source[0],[-1,256,256,2])[:,:,:,0],axis=-1), max_outputs=4)
+        target_display=tf.concat([stacked_truth[:,:,:,1:4],tf.expand_dims(stacked_truth[:,:,:,0],axis=-1)],axis=-1)
+        tf.summary.image("Ground Truth",target_display,max_outputs=4)
+        pred_display=tf.concat([stacked_pred[:,:,:,1:4],tf.expand_dims(stacked_pred[:,:,:,0],axis=-1)],axis=-1)
+        tf.summary.image("Ground Prediction",pred_display,max_outputs=4)
+        perfomance_summary=tf.summary.merge_all()
     
 
 with tf.Session() as sess:
     sess.run(init)
     sess.run(linit)
-    sess.run(source_iterator.initializer)
-    sess.run(target_iterator.initializer)
     
-    tf.summary.FileWriterCache.clear()
-    train_writer = tf.summary.FileWriter(config.train_log_dir, sess.graph)
-    eval_writer = tf.summary.FileWriter(config.eval_log_dir, sess.graph)
-    
-    for epoch in range(training_iter):
-        tic = time.clock()
-        print("Starting epoch {}".format(epoch + 1))
+    if(config.is_training):
         sess.run(source_iterator.initializer)
         sess.run(target_iterator.initializer)
-
-        for batch in range((name_list.shape[0] // batch_size) + 1):
-            try:
-                #sys.stdout.write('\r')
-                print("\t {}% completed .....".format((batch+1)*100/n_batches),end=' ')
-                if(config.is_adversial):
-                    opt1 = sess.run(optimizer1)
-                    opt2=sess.run(optimizer2)
-                    l=sess.run(loss_gen)
-                else:
-                    opt1 = sess.run(optimizer1)
-                    l=sess.run(total_pixel_loss)
-                print("Total loss : {}".format(l))
-                acc = sess.run(accuracy)
-                summary=sess.run(perfomance_summary)
-                train_writer.add_summary(summary, batch)
-                
-                if(batch%500==0):
-                    saver.save(sess,config.checkpoints_dir,global_step)
-                
-                
-            except tf.errors.OutOfRangeError:
-                saver.save(sess,config.checkpoints_dir,global_step=global_step)
-                print()
-                print("\t Epoch {} summary".format(epoch + 1))
-                print("\t loss = {} ".format(l))
-                print("\t accuracy = {}".format(acc))
-                toc = time.clock()
-                print("\t Time taken :{}".format((toc - tic) / 60))
-                break
+        
+        tf.summary.FileWriterCache.clear()
+        train_writer = tf.summary.FileWriter(config.train_log_dir, sess.graph)
+        eval_writer = tf.summary.FileWriter(config.eval_log_dir, sess.graph)
+        
+        for epoch in range(training_iter):
+            tic = time.clock()
+            print("Starting epoch {}".format(epoch + 1))
+            sess.run(source_iterator.initializer)
+            sess.run(target_iterator.initializer)
+            batch=1
+            
+            while(True):
+                try:
+                    print("\t {}% completed .....".format((batch)*200*config.batch_size/n_batches),end=' ')
+                    if(config.is_adversial):
+                        opt1 = sess.run(optimizer1)
+                        opt2=sess.run(optimizer2)
+                        l=sess.run(loss_gen)
+                    else:
+                        opt1 = sess.run(optimizer1)
+                        l=sess.run(total_pixel_loss)
+                    print("Total loss : {}".format(l))
+                    summary=sess.run(perfomance_summary)
+                    train_writer.add_summary(summary, batch)
+                    
+                    batch=batch+1
+                    if(batch%500==0):
+                        saver.save(sess,config.checkpoints_dir,global_step)
+                    
+                    
+                except tf.errors.OutOfRangeError:
+                    saver.save(sess,config.checkpoints_dir,global_step=global_step)
+                    print()
+                    print("Total batches : {}".format(batch))
+                    print("\t Epoch {} summary".format(epoch + 1))
+                    print("\t loss = {} ".format(l))
+                    toc = time.clock()
+                    print("\t Time taken :{}".format((toc - tic) / 60))
+                    break
+                    
+    #if(not config.is_training):

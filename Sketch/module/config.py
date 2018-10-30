@@ -1,7 +1,5 @@
 
 
-
-
 '''
 Config params
 '''
@@ -17,6 +15,10 @@ main_dir=os.path.join(home,'TrainingData','Character')
 sketch_dir=os.path.join(main_dir,'sketch')
 dnfs_dir=os.path.join(main_dir,'dn')
 name_list_path=os.path.join(main_dir,'train-list.txt')
+#name_list_path=os.path.join(main_dir,'temp_list.txt')
+
+#is training
+is_training=True
 
 # Logging
 log_dir=os.path.join(home,'holojest','Sketch','logs')
@@ -35,12 +37,12 @@ is_adversial= True
 loss_normalize=True
 mask_threshold=0.9
 lambda_pixel=1
-lambda_adv=0.1
+lambda_adv=0.01
 # Train configs
-training_iter = 2
+training_iter = 4
 batch_size = 2
 learning_rate = .0001
 
 # Data
 prefetch_buffer_size = 2
-num_parallel_batches = 8
+num_parallel_batches = 2
