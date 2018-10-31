@@ -1,5 +1,6 @@
 
 
+
 '''
 Config params
 '''
@@ -19,7 +20,8 @@ name_list_path=os.path.join(main_dir,'train-list.txt')
 
 #is training
 is_training=True
-
+#sketch val
+sketch_value=1
 # Logging
 log_dir=os.path.join(home,'holojest','Sketch','logs')
 train_log_dir=os.path.join(log_dir,'train')
@@ -39,7 +41,7 @@ mask_threshold=0.9
 lambda_pixel=1
 lambda_adv=0.01
 # Train configs
-training_iter = 4
+training_iter = 100
 batch_size = 2
 learning_rate = .0001
 

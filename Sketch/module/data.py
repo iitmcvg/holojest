@@ -1,5 +1,6 @@
 
 
+
 import tensorflow as tf
 import numpy as np
 import module.config as config
@@ -65,7 +66,7 @@ def normalize_image(image):
 
 #img1=cv2.imread(cd)
 
-def read_sketch_aux(name):
+def read_sketch_aux(name,value=0):
     # value 0 to 3
     """
     name:passed from name_list
@@ -74,7 +75,6 @@ def read_sketch_aux(name):
     return:[256,256,2] dtype=float32
     """
     name = name.decode('utf-8')
-    value=0
     source_directory = os.path.join(sketch_dir, name)
     f_dir = os.path.join(source_directory, 'sketch-F-{}.png'.format(value))
 
@@ -98,7 +98,7 @@ def read_sketch_aux(name):
     
     return np.float32(result)
 
-def read_sketch(name):
+def read_sketch(name,value=0):
     # value 0 to 3
     """
     name:passed from name_list
@@ -107,7 +107,6 @@ def read_sketch(name):
     return:[256,256,2] dtype=float32
     """
     name = name.decode('utf-8')
-    value=0
     source_directory = os.path.join(sketch_dir, name)
     f_dir = os.path.join(source_directory, 'sketch-F-{}.png'.format(value))
 
@@ -178,7 +177,7 @@ def source(name_list,eager=False):
         # source_dataset=source_dataset.map(lambda name:tf.py_func(read_sketch,[name],[tf.float32]))
         # source_dataset=source_dataset.batch(config.batch_size)
     else:
-        source_dataset=source_dataset.map(lambda name:tf.py_func(read_sketch,[name],[tf.float32]))
+        source_dataset=source_dataset.map(lambda name:tf.py_func(read_sketch,[name,config.sketch_value],[tf.float32]))
         
     source_dataset = source_dataset.prefetch(
                     buffer_size=config.prefetch_buffer_size)

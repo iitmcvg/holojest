@@ -1,4 +1,7 @@
 
+
+
+
 import tensorflow as tf
 import numpy as np
 import os
@@ -28,7 +31,10 @@ if(config.is_training):
 
     #predictions
     pred = model.encoderNdecoder(source)
-
+    #accuracy
+    accuracy=tf.abs(pred-target[0])
+    num_pixels=tf.constant(12*256*256*5,dtype=tf.float32)
+    accuracy=tf.reduce_sum(accuracy)/num_pixels
     # Global Step
     global_step=tf.Variable(0,dtype=tf.int32,trainable=False,name='global_step')
 
@@ -85,70 +91,97 @@ if(config.is_training):
 
     n_batches=name_list.shape[0]//batch_size
 
-    # Checkpoints
-    saver=tf.train.Saver(keep_checkpoint_every_n_hours=1)
+    
 
     #summary
     with tf.name_scope("summaries"):
-        tf.summary.scalar('Pixel loss',total_pixel_loss)
-        tf.summary.scalar('Gen (Total) loss',loss_gen)
-        tf.summary.scalar('Adv loss',loss_adv)
+        #tf.summary.scalar('Pixel loss',total_pixel_loss)
+        total_loss_summary=tf.summary.scalar('Gen (Total) loss',loss_gen)
+        adv_loss_summary=tf.summary.scalar('Adv loss',loss_adv)
+        #tf.summary.scalar('Accuracy',accuracy)
 
         # image summaries
-        tf.summary.image("Input",tf.expand_dims(tf.reshape(source[0],[-1,256,256,2])[:,:,:,0],axis=-1), max_outputs=4)
+        is1=tf.summary.image("Input",tf.expand_dims(tf.reshape(source[0],[-1,256,256,2])[:,:,:,0],axis=-1), max_outputs=4)
         target_display=tf.concat([stacked_truth[:,:,:,1:4],tf.expand_dims(stacked_truth[:,:,:,0],axis=-1)],axis=-1)
-        tf.summary.image("Ground Truth",target_display,max_outputs=4)
+        is2=tf.summary.image("Ground Truth",target_display,max_outputs=4)
         pred_display=tf.concat([stacked_pred[:,:,:,1:4],tf.expand_dims(stacked_pred[:,:,:,0],axis=-1)],axis=-1)
-        tf.summary.image("Ground Prediction",pred_display,max_outputs=4)
-        perfomance_summary=tf.summary.merge_all()
-    
+        is3=tf.summary.image("Ground Prediction",pred_display,max_outputs=4)
+        perfomance_summary=tf.summary.merge([total_loss_summary,adv_loss_summary])
+        image_summary=tf.summary.merge([is1,is2,is3])
 
-with tf.Session() as sess:
-    sess.run(init)
-    sess.run(linit)
+    # Checkpoints
+
+    print('Training...')
+
+    ckpt = tf.train.get_checkpoint_state(config.checkpoints_dir)
+#with tf.Session() as sess:
+sess_config = tf.ConfigProto()
+sess_config.gpu_options.allow_growth=True
+sess = tf.Session(config=sess_config)
+sess.run(init)
+sess.run(linit)
+if(config.is_training):
+    if ckpt and ckpt.model_checkpoint_path:
+        saver = tf.train.Saver(keep_checkpoint_every_n_hours=5, max_to_keep=2)
+        # saver.restore(sess, ckpt.model_checkpoint_path)
+        saver.restore(sess, tf.train.latest_checkpoint(config.checkpoints_dir)) # search for checkpoint file
+        graph = tf.get_default_graph()
+    else:
+        saver = tf.train.Saver(keep_checkpoint_every_n_hours=5, 
+                            max_to_keep=2)
+        global_step = 0
+        
+    print("Global Step:{}".format(global_step))
+    sess.run(source_iterator.initializer)
+    sess.run(target_iterator.initializer)
     
-    if(config.is_training):
+    
+    tf.summary.FileWriterCache.clear()
+    train_writer = tf.summary.FileWriter(config.train_log_dir, sess.graph)
+    eval_writer = tf.summary.FileWriter(config.eval_log_dir, sess.graph)
+    
+    for epoch in range(training_iter):
+        tic = time.clock()
+        print("Starting epoch {}".format(epoch + 1))
         sess.run(source_iterator.initializer)
         sess.run(target_iterator.initializer)
+        batch=1
         
-        tf.summary.FileWriterCache.clear()
-        train_writer = tf.summary.FileWriter(config.train_log_dir, sess.graph)
-        eval_writer = tf.summary.FileWriter(config.eval_log_dir, sess.graph)
-        
-        for epoch in range(training_iter):
-            tic = time.clock()
-            print("Starting epoch {}".format(epoch + 1))
-            sess.run(source_iterator.initializer)
-            sess.run(target_iterator.initializer)
-            batch=1
-            
-            while(True):
-                try:
-                    print("\t {}% completed .....".format((batch)*200*config.batch_size/n_batches),end=' ')
-                    if(config.is_adversial):
-                        opt1 = sess.run(optimizer1)
-                        opt2=sess.run(optimizer2)
-                        l=sess.run(loss_gen)
-                    else:
-                        opt1 = sess.run(optimizer1)
-                        l=sess.run(total_pixel_loss)
-                    print("Total loss : {}".format(l))
-                    summary=sess.run(perfomance_summary)
-                    train_writer.add_summary(summary, batch)
-                    
-                    batch=batch+1
-                    if(batch%500==0):
-                        saver.save(sess,config.checkpoints_dir,global_step)
-                    
-                    
-                except tf.errors.OutOfRangeError:
-                    saver.save(sess,config.checkpoints_dir,global_step=global_step)
-                    print()
-                    print("Total batches : {}".format(batch))
-                    print("\t Epoch {} summary".format(epoch + 1))
-                    print("\t loss = {} ".format(l))
-                    toc = time.clock()
-                    print("\t Time taken :{}".format((toc - tic) / 60))
-                    break
-                    
+        while(True):
+            try:
+                print("\t {}% completed ..".format((batch)*200*config.batch_size/n_batches),end=' ')
+                if(config.is_adversial):
+                    opt1 = sess.run(optimizer1)
+                    opt2=sess.run(optimizer2)
+                    l=sess.run(loss_gen)
+                else:
+                    opt1 = sess.run(optimizer1)
+                    l=sess.run(total_pixel_loss)
+                print("{}.Total loss : {}".format(epoch+1,l))
+                
+                
+                #writing image (eval)summaries
+                batch=batch+1
+                
+                if((batch)%100==0):
+                    p_summary=sess.run(perfomance_summary)
+                    train_writer.add_summary(p_summary, global_step)
+                    i_summary=sess.run(image_summary)
+                    train_writer.add_summary(i_summary, global_step)
+                if(batch%500==0):
+                    saver.save(sess, os.path.join(config.checkpoints_dir,'model.ckpt'), 
+                                global_step=global_step)
+                
+                
+            except tf.errors.OutOfRangeError:
+                saver.save(sess, os.path.join(config.checkpoints_dir,'model.ckpt'), 
+                            global_step=global_step)
+                print()
+                print("Total batches : {}".format(batch))
+                print("\t Epoch {} summary".format(epoch + 1))
+                print("\t loss = {} ".format(l))
+                toc = time.clock()
+                print("\t Time taken :{}".format((toc - tic) / 60))
+                break
+                
     #if(not config.is_training):
