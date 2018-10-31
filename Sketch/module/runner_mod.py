@@ -2,6 +2,8 @@
 
 
 
+
+
 import tensorflow as tf
 import numpy as np
 import os
@@ -75,12 +77,14 @@ if(config.is_training):
         optimizer1 = tf.train.AdamOptimizer(learning_rate=learning_rate)
         grads=gradients(loss_gen,generator_vars, checkpoints= "memory")
         grads_and_vars=list(zip(grads,generator_vars))
-        optimizer1 = optimizer1.apply_gradients(grads_and_vars,global_step=global_step)
+        #optimizer1 = optimizer1.apply_gradients(grads_and_vars,global_step=global_step)
+        optimizer1 = optimizer1.apply_gradients(grads_and_vars)
 
         # Discriminator
         grads2=gradients(loss_adv,disc_vars, checkpoints= "memory")
         grads_and_vars2 =list(zip(grads2,disc_vars))
         optimizer2=tf.train.AdamOptimizer(learning_rate=learning_rate)
+        #optimizer2 = optimizer2.apply_gradients(grads_and_vars2,global_step=global_step) 
         optimizer2 = optimizer2.apply_gradients(grads_and_vars2) 
         
     else:
@@ -149,6 +153,8 @@ if(config.is_training):
         
         while(True):
             try:
+                global_step=(global_step)+((epoch*1250)+batch+1)
+                print('Step : {}'.format(global_step))
                 print("\t {}% completed ..".format((batch)*200*config.batch_size/n_batches),end=' ')
                 if(config.is_adversial):
                     opt1 = sess.run(optimizer1)
@@ -163,12 +169,12 @@ if(config.is_training):
                 #writing image (eval)summaries
                 batch=batch+1
                 
-                if((batch)%100==0):
-                    p_summary=sess.run(perfomance_summary)
-                    train_writer.add_summary(p_summary, global_step)
+                p_summary=sess.run(perfomance_summary)
+                train_writer.add_summary(p_summary, global_step)
+                if((batch)%200==0):
                     i_summary=sess.run(image_summary)
                     train_writer.add_summary(i_summary, global_step)
-                if(batch%500==0):
+                if((global_step)%500==0):
                     saver.save(sess, os.path.join(config.checkpoints_dir,'model.ckpt'), 
                                 global_step=global_step)
                 
