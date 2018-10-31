@@ -153,8 +153,8 @@ if(config.is_training):
         
         while(True):
             try:
-                global_step=(global_step)+((epoch*1250)+batch+1)
-                print('Step : {}'.format(global_step))
+                global_step=global_step+1
+                #print('Step : {}'.format(global_step))
                 print("\t {}% completed ..".format((batch)*200*config.batch_size/n_batches),end=' ')
                 if(config.is_adversial):
                     opt1 = sess.run(optimizer1)
