@@ -1,5 +1,5 @@
 # Event files
 Sketch/logs/*
-Sketchcheckpoints/*
+Sketch/checkpoints/*
 # Ignore checkpoints
 Sketch/holojest/checkpoints/*
