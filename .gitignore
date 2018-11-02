@@ -1,5 +1,9 @@
 # Event files
 Sketch/logs/*
 Sketch/checkpoints/*
+
+# Dataset on repo root
+TrainingData/*
+
 # Ignore checkpoints
-Sketch/holojest/checkpoints/*
+Sketch/checkpoints/*

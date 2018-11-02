@@ -163,11 +163,6 @@ def test():
     print(results.shape)
     _pretty_print([x.name for x in tf.global_variables()])
 
-encoderNdecoder_lite = partial(encoderNdecoder, out_channels=5,
-        views=12,
-        normalizer_fn=tf_layers.batch_norm,
-        activation=tf.nn.leaky_relu)
-encoderNdecoder_lite= tf.contrib.layers.recompute_grad(encoderNdecoder_lite)
 
 if __name__ == "__main__":
     test()

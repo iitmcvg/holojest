@@ -1,8 +1,7 @@
+'''
+Restore from checkpoints
 
-
-
-
-
+'''
 
 import tensorflow as tf
 import numpy as np
@@ -33,6 +32,7 @@ if(config.is_training):
 
     #predictions
     pred = model.encoderNdecoder(source)
+    print(type(print))
     #accuracy
     accuracy=tf.abs(pred-target[0])
     num_pixels=tf.constant(12*256*256*5,dtype=tf.float32)
@@ -126,16 +126,22 @@ sess.run(init)
 sess.run(linit)
 if(config.is_training):
     if ckpt and ckpt.model_checkpoint_path:
+        print("Checkpoints found")
         saver = tf.train.Saver(keep_checkpoint_every_n_hours=5, max_to_keep=2)
         # saver.restore(sess, ckpt.model_checkpoint_path)
         saver.restore(sess, tf.train.latest_checkpoint(config.checkpoints_dir)) # search for checkpoint file
-        graph = tf.get_default_graph()
+        global_step = global_step + 21000
     else:
+        print("Checkpoints not found")
         saver = tf.train.Saver(keep_checkpoint_every_n_hours=5, 
                             max_to_keep=2)
-        global_step = 0
+        # global_step = 0
+        sess.run(global_step.initializer)
+
         
-    print("Global Step:{}".format(global_step))
+    # print("Global Step:{}".format(global_step))
+    # print("Global Step:{}".format(tf.train.global_step(sess, global_step)))
+    print("Global Step:{}".format(sess.run(global_step)))
     sess.run(source_iterator.initializer)
     sess.run(target_iterator.initializer)
     
@@ -160,6 +166,7 @@ if(config.is_training):
                     opt1 = sess.run(optimizer1)
                     opt2=sess.run(optimizer2)
                     l=sess.run(loss_gen)
+                    _global_step=sess.run(global_step)
                 else:
                     opt1 = sess.run(optimizer1)
                     l=sess.run(total_pixel_loss)
@@ -170,18 +177,18 @@ if(config.is_training):
                 batch=batch+1
                 
                 p_summary=sess.run(perfomance_summary)
-                train_writer.add_summary(p_summary, global_step)
+                train_writer.add_summary(p_summary,_global_step )
                 if((batch)%200==0):
                     i_summary=sess.run(image_summary)
-                    train_writer.add_summary(i_summary, global_step)
-                if((global_step)%500==0):
+                    train_writer.add_summary(i_summary, _global_step)
+                if((_global_step)%500==0):
                     saver.save(sess, os.path.join(config.checkpoints_dir,'model.ckpt'), 
-                                global_step=global_step)
+                                global_step=_global_step)
                 
                 
             except tf.errors.OutOfRangeError:
                 saver.save(sess, os.path.join(config.checkpoints_dir,'model.ckpt'), 
-                            global_step=global_step)
+                            global_step=_global_step)
                 print()
                 print("Total batches : {}".format(batch))
                 print("\t Epoch {} summary".format(epoch + 1))
