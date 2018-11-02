@@ -1,5 +1,8 @@
 # Event files
 Sketch/logs/*
 Sketch/checkpoints/*
+#Data files
+Sketch/CharacterDraw
+Sketch/data_char
 # Ignore checkpoints
 Sketch/holojest/checkpoints/*
