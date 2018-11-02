@@ -1,9 +1,9 @@
 # Event files
 Sketch/logs/*
 Sketch/checkpoints/*
-
-# Dataset on repo root
-TrainingData/*
-
+#Data files
+Sketch/CharacterDraw
+Sketch/data_char
+TrainingData/
 # Ignore checkpoints
 Sketch/checkpoints/*
